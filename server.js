@@ -1,18 +1,55 @@
+
+
 const express = require('express');
-const path = require('path');
+const mongoose = require('mongoose');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(express.json());
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
+mongoose.connect('mongodb+srv://kbtug23648:MQtKzVTdnmtvo6Oy@test-cluster.a0dwxho.mongodb.net/?retryWrites=true&w=majority&appName=test-cluster/')
 
-// Handle 404 - Page Not Found
-app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+const UsersSchema = new mongoose.Schema({
+    name: String,
+    email: String,
+    mobile: Number
+});
+const User = mongoose.model('User', UsersSchema);
+
+app.get('/', (req, res) => {
+    res.send('Welcome User');
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.get('/users', async (req, res) => {
+    const users = await User.find();
+    res.send(users);
+});
+
+app.get('/users/:name', async (req, res) => {
+    const { name } = req.params;
+    const users = await User.find({ name });
+    res.send(users);
+});
+
+app.post('/add', async (req, res) => {
+    const { name, email, mobile } = req.body;
+    const newUser = new User({ name, email, mobile });
+    await newUser.save();
+    res.send({ message: 'User added successfully', user: newUser });
+});
+
+app.delete('/delete/:name',async(req,res)=>{
+    const {name}=req.params;
+    const users = await User.findOneAndDelete({ name });
+    res.send(users);
+});
+
+app.put('/update/:name', async (req, res) => {
+    const { name } = req.params;
+    const { email, mobile } = req.body;
+    const users = await User.findOneAndUpdate({ name },{ email, mobile },{ new: true });
+    res.send({ message: "User updated successfully", users });
+});
+
+app.listen(3000, () => {
+    console.log("Server Running on port 3000");
 });
